@@ -1,7 +1,79 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.29.0",
+  "version": "1.0.0",
   "patches": [
+    {
+      "name": "Ads Free Rewards (Experimental)",
+      "category": null,
+      "description": "Get rewards without watching ads. Combine with No Ads for other formats, but keep No Ads' rewarded block off.\n\nCredits: Nai64Patches from Nai64.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": [
+        {
+          "key": "patchVersion",
+          "title": "Patch version",
+          "description": "Choose the implementation to use. Each version is a snapshot - newer ones support more networks. If the latest does not work for your app, try an older version.",
+          "required": false,
+          "type": "kotlin.String",
+          "default": "1.41.0",
+          "values": {
+            "1.41.0": "1.41.0",
+            "1.40.0": "1.40.0",
+            "1.38.0": "1.38.0",
+            "1.34.0": "1.34.0",
+            "1.33.0": "1.33.0",
+            "1.32.0": "1.32.0",
+            "1.31.0": "1.31.0",
+            "1.30.0": "1.30.0",
+            "1.22.0": "1.22.0",
+            "1.21.0": "1.21.0",
+            "1.20.0": "1.20.0",
+            "1.19.0": "1.19.0",
+            "1.18.1": "1.18.1",
+            "1.18.0": "1.18.0",
+            "1.17.0": "1.17.0",
+            "1.16.0": "1.16.0",
+            "1.15.0": "1.15.0",
+            "1.1.0 (Original)": "1.1.0"
+          }
+        },
+        {
+          "key": "rewardStrategy",
+          "title": "Reward Strategy",
+          "description": "Which ad-network integration to patch. 'Auto' covers every supported network",
+          "required": false,
+          "type": "kotlin.String",
+          "default": "auto",
+          "values": {
+            "Auto (all networks)": "auto",
+            "AppLovin MAX": "max",
+            "Unity Ads": "unityAds",
+            "ironSource / LevelPlay": "ironSource",
+            "RuStore / VK MyTarget": "rustore",
+            "Huawei Ads Kit / Petal Ads": "huawei"
+          }
+        },
+        {
+          "key": "instantReward",
+          "title": "Instant reward",
+          "description": "Claim the reward immediately without showing an ad (applies to the current patch version)",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "fakeAdAvailability",
+          "title": "Fake ad availability",
+          "description": "Force ad SDKs to report ads as available so the reward flow triggers (needed when no real ad can fill)",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        }
+      ]
+    },
     {
       "name": "Bypass Emulator Detection",
       "category": "Bypass Emulator Detection",
