@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "patches": [
     {
       "name": "Ads Free Rewards (Experimental)",
@@ -1311,6 +1311,83 @@
           "required": false,
           "type": "kotlin.String",
           "default": "000000000000000",
+          "values": null
+        }
+      ]
+    },
+    {
+      "name": "No Ads (Experimental)",
+      "category": null,
+      "description": "Blocks ads by type. Pick what to block. For rewarded ads use Ads Free Rewards instead. Select this standalone patch instead of Control App Ads for the same app.\n\nCredits: Nai64Patches from Nai64.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": [
+        {
+          "key": "preset",
+          "title": "Preset",
+          "description": "Quick setup: Recommended blocks most ads but keeps rewarded ads for Ads Free Rewards compatibility. Aggressive blocks everything including rewarded. Custom lets you pick below.",
+          "required": false,
+          "type": "kotlin.String",
+          "default": "recommended",
+          "values": {
+            "Recommended (keep rewarded)": "recommended",
+            "Aggressive (block all)": "aggressive",
+            "Custom": "custom"
+          }
+        },
+        {
+          "key": "blockInterstitials",
+          "title": "Block Interstitials",
+          "description": "Full-screen ads between levels or menus. Safe to block in most apps.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "blockBanners",
+          "title": "Block Banners",
+          "description": "Thin banners at top/bottom. Safe to block; rarely breaks layout.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "blockAppOpen",
+          "title": "Block App Open",
+          "description": "Ads on cold start. Block to skip the launch ad.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "blockMRec",
+          "title": "Block MREC",
+          "description": "Medium rectangles (300x250) inside feeds. Safe to block.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
+          "values": null
+        },
+        {
+          "key": "blockRewarded",
+          "title": "Block Rewarded",
+          "description": "Rewarded video  -  disable if you use Ads Free Rewards, otherwise progress gates may break. Enable only to fully remove rewarded ads.",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": false,
+          "values": null
+        },
+        {
+          "key": "blockNative",
+          "title": "Block Native",
+          "description": "Native ads blended into feeds/lists. Enable for cleaner feeds (may leave empty placeholders).",
+          "required": false,
+          "type": "kotlin.Boolean",
+          "default": true,
           "values": null
         }
       ]

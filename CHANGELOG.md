@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/newuser7171/UniPatches/compare/v1.0.0...v1.1.0) (2026-09-28)
+
+### ✨ New Features
+
+* **ads:** restore standalone No Ads patch ([f4cb29c](https://github.com/newuser7171/UniPatches/commit/f4cb29c3b2a6eb45d030a7dbc0703a442827889c))
+
 ## 1.0.0 (2026-09-28)
 
 ### 🐛 Bug Fixes
