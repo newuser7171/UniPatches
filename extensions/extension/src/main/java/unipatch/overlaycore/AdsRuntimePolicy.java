@@ -145,11 +145,19 @@ public final class AdsRuntimePolicy {
         if (encoded == null || encoded.isEmpty()) return;
         try {
             JSONObject values = new JSONObject(encoded);
-            if (values.has("block_ads")) blockedFormats = values.optBoolean("block_ads") ? blockedFormats : 0;
+            boolean hasFormatValues = values.has("block_interstitials") || values.has("block_banners") ||
+                    values.has("block_app_open") || values.has("block_mrec") ||
+                    values.has("block_rewarded") || values.has("block_native");
+            if (values.has("block_ads") && !values.optBoolean("block_ads")) {
+                blockedFormats = 0;
+            } else if (hasFormatValues) {
+                blockedFormats = applyFormatValues(values, blockedFormats);
+            } else if (values.has("block_ads")) {
+                blockedFormats = values.optBoolean("block_ads") ? ALL_BLOCKED_FORMATS : 0;
+            }
             if (values.has("skip_rewarded")) skipRewarded = values.optBoolean("skip_rewarded");
             if (values.has("instant_reward")) grantReward = values.optBoolean("instant_reward");
             if (values.has("fake_ad_availability")) fakeAvailability = values.optBoolean("fake_ad_availability");
-    private static final int ALL_BLOCKED_FORMATS = 63;
             if (values.has("block_hosts")) hostsEnabled = values.optBoolean("block_hosts");
         } catch (org.json.JSONException ignored) {
             // Manager data is an optional override. The embedded patch-time values remain active.
