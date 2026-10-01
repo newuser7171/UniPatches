@@ -86,6 +86,19 @@ val unlockPremiumPatch = bytecodePatch(
             "lorg/jetbrains/",
         )
 
+        // Payment SDK internals: state flags here describe a payment session, not an
+        // entitlement. Forcing them true breaks the checkout flow it is meant to unlock.
+        val PAYMENT_PREFIXES = listOf(
+            "com/stripe/",
+            "lcom/stripe/",
+            "com/google/android/gms/wallet",
+            "com/google/android/gms/internal/",
+            "com/adyen/",
+            "com/braintreepaymentsapi/",
+            "com/paypal/",
+            "com/squareup/",
+        )
+
         // Substring matching on "ispro" catches isProjected(), isProductValid(), isProgress... .
         // Require the token to sit on a camelCase boundary: whole word, or an accessor prefix
         // followed by exactly "pro" (isPro, hasPro, isProUser) but never "projected".
@@ -331,14 +344,20 @@ val unlockPremiumPatch = bytecodePatch(
             // and got forced true, which is an animation flag, not a purchase gate.
             if (FRAMEWORK_PREFIXES.any { typeLower.startsWith(it) }) return@classDefForEach
             if (typeLower.contains("okhttp") || typeLower.contains("ssl") || typeLower.contains("network")) return@classDefForEach
-            val looksPremiumClass = typeLower.contains("premium") || typeLower.contains("billing") ||
-                typeLower.contains("purchase") || typeLower.contains("subscription") || typeLower.contains("entitle")
+            // Payment SDK internals. Stripe's namespace contains "payment", so a
+            // premium-looking class forced component1(), equals(), isFilledOut() and
+            // getCollectEmail() to true across 80 methods on Simply Guitar.
+            if (PAYMENT_PREFIXES.any { typeLower.startsWith(it) || typeLower.contains(it) }) return@classDefForEach
 
             val mutableClass by lazy { try { mutableClassDefByOrNull(classDef.type) } catch (_: Exception) { null } }
 
             for (method in classDef.methods) {
                 val n = method.name.lowercase()
-                if (method.returnType == "Z" && n.length in 3..40 && (looksPremiumClass || hasPremiumWord(n))) {
+                // The method name must look premium on its own. Gating on a
+                // premium-looking CLASS alone forces every Z method in it, which is
+                // how Stripe internals got swept up. App entitlement getters are
+                // named for what they check; being in a PremiumManager is not enough.
+                if (method.returnType == "Z" && n.length in 3..40 && hasPremiumWord(n)) {
                     if (n.contains("provider") || n.contains("product") || n.contains("progress") || n.contains("probableprime")) continue
                     try {
                         if (method.implementation == null) continue
