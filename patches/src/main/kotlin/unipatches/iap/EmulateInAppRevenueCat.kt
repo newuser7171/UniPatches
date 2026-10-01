@@ -179,7 +179,18 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
         //
         // Kept disabled so enabling the coverage toggle cannot yield a broken block.
         // Restoring it needs the real cause of the invalid invoke, still unknown.
-        logger.warning("Emulate InApp: RC.onPurchasesUpdated fake disabled (pending emitter review)")
+        // Disabled: addInstructions drops the high-register invoke-static to
+        // InAppRuntimePolicy.productIdFrom, stranding the following
+        // move-result-object and failing dex verification. Confirmed on a
+        // pristine APK with this block executing: the log reports the fake as
+        // applied and adds RC.onPurchasesUpdated to the patched list, yet the
+        // emitted method begins at offset 0x0000 with a bare
+        // move-result-object and no producer.
+        //
+        // Note this is not what made Rizz clean on 1.30.1: RC.* labels are gated
+        // on InAppCoverage.revenueCat, a booleanOption defaulting to false, so
+        // the block never ran in the configuration that produced the crash.
+        logger.warning("Emulate InApp: RC.onPurchasesUpdated fake disabled (dropped invoke strands move-result-object)")
         return@patchAll
         @Suppress("UNREACHABLE_CODE")
         run {
