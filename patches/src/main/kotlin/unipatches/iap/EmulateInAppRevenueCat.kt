@@ -156,13 +156,30 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
             returnType = "V",
             custom = { m, _ -> m.parameterTypes.size == 2 && m.parameterTypes[1] == "Ljava/util/List;" }),
             "RC.onPurchasesUpdated") { method ->
-        // Disabled: addInstructions drops the high-register invoke-static to
-        // InAppRuntimePolicy.productIdFrom, leaving the following move-result-object
-        // with no producer and failing dex verification. Shipping a crashing patch is
-        // worse than shipping one fewer feature, so this method is left untouched until
-        // the emitter can encode a 35c invoke against v16. The rest of the RevenueCat
-        // surface (purchase-unsafe, EntitlementInfo, onError) is patched separately.
-        logger.warning("Emulate InApp: RC.onPurchasesUpdated fake disabled (dropped invoke would break verification)")
+        // Disabled pending emitter review.
+        //
+        // An earlier note here claimed addInstructions drops the high-register
+        // invoke-static to InAppRuntimePolicy.productIdFrom when its argument register
+        // reaches v16 or higher. That was never verified and is probably wrong.
+        //
+        // What is actually established:
+        //  - RC.* labels are gated on InAppCoverage.revenueCat, a booleanOption that
+        //    defaults to false. strategyEnabled() returns before any fingerprint is
+        //    attempted when it is off, so this block did not run in the configuration
+        //    that produced the reported VerifyError.
+        //  - The orphaned move-result-object observed in dexdump came from an older
+        //    build with coverage enabled, already written into the test APK. Patching
+        //    that APK again read our own leftover back, which made every rebuild look
+        //    byte-identical.
+        //  - So disabling this block did not fix the VerifyError. Rizz launches clean
+        //    on the current bundle because RevenueCat coverage is off by default.
+        //
+        // Verified with coverage forced on: the injector runs, adds nothing, and the
+        // label reads RC.onPurchasesUpdated rather than BillingClient.startConnection.
+        //
+        // Kept disabled so enabling the coverage toggle cannot yield a broken block.
+        // Restoring it needs the real cause of the invalid invoke, still unknown.
+        logger.warning("Emulate InApp: RC.onPurchasesUpdated fake disabled (pending emitter review)")
         return@patchAll
         @Suppress("UNREACHABLE_CODE")
         run {
