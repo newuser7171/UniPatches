@@ -179,20 +179,7 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
         //
         // Kept disabled so enabling the coverage toggle cannot yield a broken block.
         // Restoring it needs the real cause of the invalid invoke, still unknown.
-        // Disabled: addInstructions drops the high-register invoke-static to
-        // InAppRuntimePolicy.productIdFrom, stranding the following
-        // move-result-object and failing dex verification. Confirmed on a
-        // pristine APK with this block executing: the log reports the fake as
-        // applied and adds RC.onPurchasesUpdated to the patched list, yet the
-        // emitted method begins at offset 0x0000 with a bare
-        // move-result-object and no producer.
-        //
-        // Note this is not what made Rizz clean on 1.30.1: RC.* labels are gated
-        // on InAppCoverage.revenueCat, a booleanOption defaulting to false, so
-        // the block never ran in the configuration that produced the crash.
-        logger.warning("Emulate InApp: RC.onPurchasesUpdated fake disabled (dropped invoke strands move-result-object)")
-        return@patchAll
-        @Suppress("UNREACHABLE_CODE")
+        logger.info("Emulate InApp: RC.onPurchasesUpdated fake enabled (unconditional low-register copy)")
         run {
             try {
                 val origCount = method.implementation!!.registerCount
@@ -221,17 +208,19 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                     sb.append(s).append('\n')
                 }
                 // invoke-static (format 35c) encodes argument registers in 4 bits, so it cannot
-                // address v16 and above. This patcher's addInstructions parser silently DROPS an
-                // out-of-range 35c invoke, stranding the following move-result-object and failing
-                // dex verification. It also does not accept "invoke-static/range" as an opcode.
-                // move-object/from16 takes a full 16-bit register, so normalise into a low temp
-                // first and keep the invoke itself inside the 35c-representable range.
-                val highReg = (purchasesReg.removePrefix("v").toIntOrNull() ?: 0) >= 16
-                val idArg = if (highReg) {
-                    emit("move-object/from16 v${vH + 1}, $purchasesReg")
-                    "v${vH + 1}"
-                } else purchasesReg
-                emit("invoke-static {$idArg}, Lunipatch/overlaycore/InAppRuntimePolicy;->productIdFrom(Ljava/lang/Object;)Ljava/lang/String;")
+                // address v16 and above, and this patcher's parser silently DROPS an
+                // out-of-range 35c invoke rather than failing. That strands the following
+                // move-result-object and fails dex verification.
+                //
+                // Always copy the parameter through a low temp instead of branching on whether
+                // the register looks high. A guard that parses the register name is unreliable
+                // here: parameterRegister can hand back a param-style spelling whose numeric
+                // suffix does not parse, so the check silently fails and the raw high-register
+                // invoke is emitted and dropped. move-object/from16 takes a full 16-bit register,
+                // so the copy is always legal, and when the source register is already low the
+                // extra move is a harmless no-op. vH + 1 is below 16 because origCount <= 13.
+                emit("move-object/from16 v${vH + 1}, $purchasesReg")
+                emit("invoke-static {v${vH + 1}}, Lunipatch/overlaycore/InAppRuntimePolicy;->productIdFrom(Ljava/lang/Object;)Ljava/lang/String;")
                 emit("move-result-object v$vH")
                 emit("if-eqz v$vH, :morphe_rc_purchases_original")
                 emit("const-string v${vH + 1}, \"{}\"")
