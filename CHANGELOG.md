@@ -1,3 +1,9 @@
+## [1.30.1](https://github.com/newuser7171/UniPatches/compare/v1.30.0...v1.30.1) (2026-10-01)
+
+### 🐛 Bug Fixes
+
+* **unlock-premium:** match premium tokens on word boundaries, skip frameworks ([b49d86c](https://github.com/newuser7171/UniPatches/commit/b49d86cbc335ff16d4fa5e1e08cf45d64be087b5))
+
 ## [1.30.0](https://github.com/newuser7171/UniPatches/compare/v1.29.0...v1.30.0) (2026-10-01)
 
 ### 🐛 Bug Fixes
