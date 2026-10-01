@@ -71,6 +71,49 @@ val unlockPremiumPatch = bytecodePatch(
             return false
         }
 
+        // Framework / support-library prefixes are never app entitlement code.
+        val FRAMEWORK_PREFIXES = listOf(
+            "lcom/google/android/material/",
+            "landroidx/",
+            "landroid/",
+            "lkotlin/",
+            "lkotlinx/",
+            "lcom/google/common/",
+            "lcom/google/protobuf/",
+            "lcom/google/gson/",
+            "lcom/google/firebase/",
+            "lcom/google/android/gms/",
+            "lorg/jetbrains/",
+        )
+
+        // Substring matching on "ispro" catches isProjected(), isProductValid(), isProgress... .
+        // Require the token to sit on a camelCase boundary: whole word, or an accessor prefix
+        // followed by exactly "pro" (isPro, hasPro, isProUser) but never "projected".
+        val PREMIUM_WORDS = setOf(
+            "premium", "vip", "pro", "subscribed", "subscription", "entitlement", "entitled",
+            "purchased", "purchase", "paid", "unlocked", "lifetime", "bought", "receipt", "member",
+        )
+        val ACCESSOR_PREFIXES = setOf("is", "has", "was", "get", "should", "can", "use", "needs")
+
+        fun hasPremiumWord(name: String): Boolean {
+            val words = name.split('_', '-', ' ').flatMap { part ->
+                val out = mutableListOf<String>()
+                var current = StringBuilder()
+                for (ch in part) {
+                    if (ch.isUpperCase() && current.isNotEmpty()) { out.add(current.toString()); current = StringBuilder() }
+                    current.append(ch)
+                }
+                if (current.isNotEmpty()) out.add(current.toString())
+                out
+            }.map { it.lowercase() }
+            for (w in words) if (PREMIUM_WORDS.contains(w)) return true
+            // "isProUser" -> [is, pro, user] matches; "isProjected" -> [is, projected] does not.
+            for (i in 1 until words.size) {
+                if (words[i] == "pro" && words[i - 1] in ACCESSOR_PREFIXES) return true
+            }
+            return false
+        }
+
         // Upstream calls mutableClassDefByOrNull(classDef.type).mutableMethodOf(method); this repo only
         // exposes the OrNull form and has no findMutableMethodOf, so match by signature instead.
         fun MutableClass.mutableMethodOf(method: Method): MutableMethod? = methods.firstOrNull {
@@ -283,15 +326,19 @@ val unlockPremiumPatch = bytecodePatch(
         // getter (or the matching put) rather than replacing whole methods.
         classDefForEach { classDef ->
             val typeLower = classDef.type.lowercase()
+            // Framework and support-library packages are never the app's own entitlement
+            // logic. isProjected() in FocusRingDrawable matched upstream's "isPro" substring
+            // and got forced true, which is an animation flag, not a purchase gate.
+            if (FRAMEWORK_PREFIXES.any { typeLower.startsWith(it) }) return@classDefForEach
+            if (typeLower.contains("okhttp") || typeLower.contains("ssl") || typeLower.contains("network")) return@classDefForEach
             val looksPremiumClass = typeLower.contains("premium") || typeLower.contains("billing") ||
                 typeLower.contains("purchase") || typeLower.contains("subscription") || typeLower.contains("entitle")
-            if (typeLower.contains("okhttp") || typeLower.contains("ssl") || typeLower.contains("network")) return@classDefForEach
 
             val mutableClass by lazy { try { mutableClassDefByOrNull(classDef.type) } catch (_: Exception) { null } }
 
             for (method in classDef.methods) {
                 val n = method.name.lowercase()
-                if (method.returnType == "Z" && n.length in 3..40 && (looksPremiumClass || n.contains("premium") || n.contains("haspro") || n.contains("ispro"))) {
+                if (method.returnType == "Z" && n.length in 3..40 && (looksPremiumClass || hasPremiumWord(n))) {
                     if (n.contains("provider") || n.contains("product") || n.contains("progress") || n.contains("probableprime")) continue
                     try {
                         if (method.implementation == null) continue
