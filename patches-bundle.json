@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-10-01T12:09:33",
-  "description": "## [1.30.1](https://github.com/newuser7171/UniPatches/compare/v1.30.0...v1.30.1) (2026-10-01)\n\n### 🐛 Bug Fixes\n\n* **unlock-premium:** match premium tokens on word boundaries, skip frameworks ([b49d86c](https://github.com/newuser7171/UniPatches/commit/b49d86cbc335ff16d4fa5e1e08cf45d64be087b5))",
-  "download_url": "https://github.com/newuser7171/UniPatches/releases/download/v1.30.1/patches-1.30.1.mpp",
+  "created_at": "2026-10-01T13:27:27",
+  "description": "## [1.31.0](https://github.com/newuser7171/UniPatches/compare/v1.30.1...v1.31.0) (2026-10-01)\n\n### 🐛 Bug Fixes\n\n* **unlock-premium:** stop sweeping payment SDK internals ([399e4a4](https://github.com/newuser7171/UniPatches/commit/399e4a434d2f16d44f2ecedaaf9ecd69bd3494ba))\n\n### ✨ New Features\n\n* **overlay:** add in-process memory scanner engine ([a8a3515](https://github.com/newuser7171/UniPatches/commit/a8a3515686ed878a06159825dcce41f6fa70faab))",
+  "download_url": "https://github.com/newuser7171/UniPatches/releases/download/v1.31.0/patches-1.31.0.mpp",
   "signature_download_url": "",
-  "version": "1.30.1"
+  "version": "1.31.0"
 }

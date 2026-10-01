@@ -1,3 +1,13 @@
+## [1.31.0](https://github.com/newuser7171/UniPatches/compare/v1.30.1...v1.31.0) (2026-10-01)
+
+### 🐛 Bug Fixes
+
+* **unlock-premium:** stop sweeping payment SDK internals ([399e4a4](https://github.com/newuser7171/UniPatches/commit/399e4a434d2f16d44f2ecedaaf9ecd69bd3494ba))
+
+### ✨ New Features
+
+* **overlay:** add in-process memory scanner engine ([a8a3515](https://github.com/newuser7171/UniPatches/commit/a8a3515686ed878a06159825dcce41f6fa70faab))
+
 ## [1.30.1](https://github.com/newuser7171/UniPatches/compare/v1.30.0...v1.30.1) (2026-10-01)
 
 ### 🐛 Bug Fixes
