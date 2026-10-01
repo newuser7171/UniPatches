@@ -3407,6 +3407,25 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Unlock Premium",
+      "category": "Featured",
+      "description": "Unlock premium features and remove paywalls by forcing app-side entitlement checks.",
+      "default": false,
+      "dependencies": [],
+      "compatiblePackages": null,
+      "options": [
+        {
+          "key": "premiumCustomKeys",
+          "title": "Extra keys",
+          "description": "Comma-separated extra SharedPreferences/DataStore keys to spoof (e.g. my_premium,my_pro). Leave empty for default list.",
+          "required": false,
+          "type": "kotlin.String",
+          "default": "",
+          "values": null
+        }
+      ]
     }
   ]
 }
