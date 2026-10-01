@@ -84,9 +84,6 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                             sb.append(s).append('\n')
                         }
                         emit("move-object/from16 v$uCb, $cbReg")
-                        emit("const-string v10, \"MorpheRC\"")
-                        emit("const-string v11, \"RC $pn buy tapped\"")
-                        emit("invoke-static {v10, v11}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I")
                         if (productArg == null) {
                             logger.warning("Emulate InApp: RC.$pn skipped (no product-bearing argument)")
                             return@patchAll
@@ -159,6 +156,16 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
             returnType = "V",
             custom = { m, _ -> m.parameterTypes.size == 2 && m.parameterTypes[1] == "Ljava/util/List;" }),
             "RC.onPurchasesUpdated") { method ->
+        // Disabled: addInstructions drops the high-register invoke-static to
+        // InAppRuntimePolicy.productIdFrom, leaving the following move-result-object
+        // with no producer and failing dex verification. Shipping a crashing patch is
+        // worse than shipping one fewer feature, so this method is left untouched until
+        // the emitter can encode a 35c invoke against v16. The rest of the RevenueCat
+        // surface (purchase-unsafe, EntitlementInfo, onError) is patched separately.
+        logger.warning("Emulate InApp: RC.onPurchasesUpdated fake disabled (dropped invoke would break verification)")
+        return@patchAll
+        @Suppress("UNREACHABLE_CODE")
+        run {
             try {
                 val origCount = method.implementation!!.registerCount
                 // High regs only: low regs are Undefined at entry (reading them
@@ -185,10 +192,18 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                 fun emit(s: String) {
                     sb.append(s).append('\n')
                 }
-                emit("const-string v$vH, \"MorpheRC\"")
-                emit("const-string v${vH + 1}, \"RC purchasesUpdated\"")
-                emit("invoke-static {v$vH, v${vH + 1}}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I")
-                emit("invoke-static {$purchasesReg}, Lunipatch/overlaycore/InAppRuntimePolicy;->productIdFrom(Ljava/lang/Object;)Ljava/lang/String;")
+                // invoke-static (format 35c) encodes argument registers in 4 bits, so it cannot
+                // address v16 and above. This patcher's addInstructions parser silently DROPS an
+                // out-of-range 35c invoke, stranding the following move-result-object and failing
+                // dex verification. It also does not accept "invoke-static/range" as an opcode.
+                // move-object/from16 takes a full 16-bit register, so normalise into a low temp
+                // first and keep the invoke itself inside the 35c-representable range.
+                val highReg = (purchasesReg.removePrefix("v").toIntOrNull() ?: 0) >= 16
+                val idArg = if (highReg) {
+                    emit("move-object/from16 v${vH + 1}, $purchasesReg")
+                    "v${vH + 1}"
+                } else purchasesReg
+                emit("invoke-static {$idArg}, Lunipatch/overlaycore/InAppRuntimePolicy;->productIdFrom(Ljava/lang/Object;)Ljava/lang/String;")
                 emit("move-result-object v$vH")
                 emit("if-eqz v$vH, :morphe_rc_purchases_original")
                 emit("const-string v${vH + 1}, \"{}\"")
@@ -211,6 +226,7 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
             } catch (e: Exception) {
                 logger.warning("Emulate InApp: RC.onPurchasesUpdated fake skipped: ${e.message}")
             }
+        }
         }
 
         // 3) App-side RevenueCat error callbacks with PurchasesError -> suppress,
