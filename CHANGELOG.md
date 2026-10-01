@@ -1,3 +1,9 @@
+## [1.31.1](https://github.com/newuser7171/UniPatches/compare/v1.31.0...v1.31.1) (2026-10-01)
+
+### 🐛 Bug Fixes
+
+* **iap:** copy high registers through a low temp before 35c invokes ([036a566](https://github.com/newuser7171/UniPatches/commit/036a5667c12e6fb69653b11683c6659cb7188a37))
+
 ## [1.31.0](https://github.com/newuser7171/UniPatches/compare/v1.30.1...v1.31.0) (2026-10-01)
 
 ### 🐛 Bug Fixes
