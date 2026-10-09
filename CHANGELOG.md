@@ -1,3 +1,10 @@
+## [1.31.4](https://github.com/newuser7171/UniPatches/compare/v1.31.3...v1.31.4) (2026-10-09)
+
+### 🐛 Bug Fixes
+
+* **iap:** guard Rizz paywall stop when lifecycle LiveData is absent ([b4f16b3](https://github.com/newuser7171/UniPatches/commit/b4f16b3bb8e404e55fa0e3c7df23c06e130b3eca))
+* **iap:** preserve RevenueCat error handling and isolate store hooks ([e94f06c](https://github.com/newuser7171/UniPatches/commit/e94f06c87f0e10529821524234b71376b0ebc214))
+
 ## [1.31.3](https://github.com/newuser7171/UniPatches/compare/v1.31.2...v1.31.3) (2026-10-09)
 
 ### 🐛 Bug Fixes

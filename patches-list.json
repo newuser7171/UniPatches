@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.31.3",
+  "version": "1.31.4",
   "patches": [
     {
       "name": "Ads Block Patch ( Experimental, Enhanced, Overlay Support, UniManager Support )",
@@ -1410,7 +1410,7 @@
         {
           "key": "inAppAutomaticMode",
           "title": "InApp Emulation > Patch Mode > Automatic Mode",
-          "description": "When enabled, Automatic Mode detects and enables supported InApp Emulation strategies except RevenueCat, which always requires explicit opt-in. When disabled, Manual Mode is used and only the Patch Coverage strategies you select are applied.",
+          "description": "When enabled, Automatic Mode detects and enables supported InApp Emulation strategies except RevenueCat and Amazon IAP, which require explicit opt-in. When disabled, Manual Mode is used and only the Patch Coverage strategies you select are applied.",
           "required": false,
           "type": "kotlin.Boolean",
           "default": true,
@@ -1558,7 +1558,7 @@
         {
           "key": "inAppCoverageAmazon",
           "title": "InApp Emulation > Patch Coverage > Amazon IAP",
-          "description": "Enable Amazon IAP strategy when Automatic Mode is disabled.",
+          "description": "Explicitly opt into Amazon IAP in either mode. Requires the Amazon IAP SDK; does not patch RevenueCat Amazon adapter methods.",
           "required": false,
           "type": "kotlin.Boolean",
           "default": false,
