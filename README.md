@@ -197,3 +197,12 @@ Google Play Billing sandbox, and no missing store dependencies for the next vali
 Compare coverage off/on, inspect emitted invoke/result adjacency, and run initialization,
 callback, cancellation, catalog, and restart checks. Server-side verification is unsupported.
 The APK smoke test checks injection and runtime presence, not end-to-end purchases.
+
+When explicitly enabled, RevenueCat compatibility also detects absent Amazon IAP classes.
+For the recognized straight-line BillingFactory Amazon construction branch, it removes
+references to the unavailable adapter and reports a clear dependency error if Amazon is
+selected. Existing Play and test-store dispatch remains unchanged; it never silently
+converts an Amazon configuration into Play. Unknown factory layouts are left unchanged.
+This addresses optional Amazon class resolution on Play builds, not missing Amazon billing
+support: real Amazon builds still require their complete store dependencies. Device
+validation of the reported emulator failure remains pending.
