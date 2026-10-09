@@ -1,3 +1,9 @@
+## [1.33.0](https://github.com/newuser7171/UniPatches/compare/v1.32.0...v1.33.0) (2026-10-09)
+
+### ✨ New Features
+
+* **frida:** add universal entitlement and memory companion ([a7e6faf](https://github.com/newuser7171/UniPatches/commit/a7e6fafa5d071d62d84ea213a306e7f692b03ca9))
+
 ## [1.32.0](https://github.com/newuser7171/UniPatches/compare/v1.31.5...v1.32.0) (2026-10-09)
 
 ### 🐛 Bug Fixes
