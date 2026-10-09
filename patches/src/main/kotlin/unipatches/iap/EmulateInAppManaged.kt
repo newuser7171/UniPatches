@@ -60,6 +60,15 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
 
         fun strategyEnabled(label: String): Boolean = options.strategyEnabled(label, hasBillingV9Api)
 
+        // Obfuscated app wrappers often have no billing word in their class name.
+        // A direct call to the Play Billing API is stronger evidence than a name.
+        fun directlyUsesPlayBilling(method: Method): Boolean =
+            method.implementation?.instructions?.any { instruction ->
+                val reference = (instruction as? ReferenceInstruction)?.reference
+                reference is MethodReference &&
+                    reference.definingClass.startsWith("Lcom/android/billingclient/api/")
+            } == true
+
         fun automaticCandidate(label: String, method: app.morphe.patcher.util.proxy.mutableTypes.MutableMethod): String? {
             if (!options.automaticMode) return null
             options.backendBoundaryReason(method.definingClass)?.let { return it }
@@ -75,7 +84,7 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
                 "com/amazon/", "com/huawei/", "com/samsung/", "xsolla",
             ).any(classText::contains)
             if (explicitLabel) return null
-            if (!knownNamespace) return "missing billing/vendor namespace"
+            if (!knownNamespace && !directlyUsesPlayBilling(method)) return "missing billing/vendor namespace or direct Play Billing call"
 
             val methodName = method.name.lowercase()
             val isOpenIabSkuGetter = classText == "lorg/onepf/oms/appstore/googleutils/skudetails;" &&
@@ -92,7 +101,10 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
                 parameterText.contains("purchase") || parameterText.contains("receipt") || parameterText.contains("sku") || parameterText.contains("product"),
                 method.returnType.contains("BillingResult") || method.returnType.contains("Purchase") || method.returnType.contains("Sku"),
             ).count { it }
-            if (indicators < 2) return "insufficient billing indicators"
+            if (indicators < 2 && !(directlyUsesPlayBilling(method) &&
+                        (methodName.contains("verify") || methodName.contains("receipt") || methodName.contains("signature")))) {
+                return "insufficient billing indicators"
+            }
             return null
         }
 
@@ -792,13 +804,13 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
         }
 
         for (vn in listOf("verifySignature", "isValidSignature", "validateReceipt", "verifyReceipt", "checkReceipt", "isReceiptValid", "validateSignature")) {
-            patchAll(Fingerprint(name = vn, returnType = "Z", custom = { _, c -> val t=c.type.lowercase(); t.contains("billing") || t.contains("purchase") || t.contains("receipt") || t.contains("security") || t.contains("store") || t.contains("googleplay") || t.contains("xsolla") || t.contains("amazon") || t.contains("huawei") || t.contains("validator") }), vn) {
+            patchAll(Fingerprint(name = vn, returnType = "Z", custom = { m, c -> val t=c.type.lowercase(); t.contains("billing") || t.contains("purchase") || t.contains("receipt") || t.contains("security") || t.contains("store") || t.contains("googleplay") || t.contains("xsolla") || t.contains("amazon") || t.contains("huawei") || t.contains("validator") || (options.automaticMode && directlyUsesPlayBilling(m)) }), vn) {
                 it.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
             }
         }
         // ultra-generic names scoped strictly
         for (vn in listOf("verify", "checkSignature", "isValid")) {
-            patchAll(Fingerprint(name = vn, returnType = "Z", custom = { _, c -> val t=c.type.lowercase(); (t.contains("security") || t.contains("receipt") || t.contains("purchase") || t.contains("billing") || t.contains("validator")) && !t.contains("okhttp") && !t.contains("ssl") }), vn) {
+            patchAll(Fingerprint(name = vn, returnType = "Z", custom = { m, c -> val t=c.type.lowercase(); ((t.contains("security") || t.contains("receipt") || t.contains("purchase") || t.contains("billing") || t.contains("validator")) || (options.automaticMode && directlyUsesPlayBilling(m))) && !t.contains("okhttp") && !t.contains("ssl") }), vn) {
                 it.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
             }
         }
