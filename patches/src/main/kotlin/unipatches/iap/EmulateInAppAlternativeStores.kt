@@ -39,7 +39,7 @@ internal fun applyAlternativeStorePatches(context: InAppManagedAdapterContext) {
     }
 
     for (name in listOf("purchase", "getUserData", "getProductData", "getPurchaseUpdates", "onProductDataResponse", "onPurchaseResponse", "onUserDataResponse")) {
-        patchAll(Fingerprint(name = name, custom = { _, c -> c.type.lowercase().contains("amazon") }), "Amazon.$name", 1) {
+        patchAll(Fingerprint(name = name, custom = { _, c -> c.type.lowercase().startsWith("lcom/amazon/device/iap/") }), "Amazon.$name", 1) {
             when (it.returnType) {
                 "V" -> it.addInstructions(0, "return-void")
                 "Z" -> it.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
@@ -47,7 +47,7 @@ internal fun applyAlternativeStorePatches(context: InAppManagedAdapterContext) {
             }
         }
     }
-    patchAll(Fingerprint(name = "getUserData", custom = { m, c -> m.returnType == "V" && c.type.contains("PurchasingService") }), "Amazon.PurchasingService.getUserData", 1) {
+    patchAll(Fingerprint(name = "getUserData", custom = { m, c -> m.returnType == "V" && c.type == "Lcom/amazon/device/iap/PurchasingService;" }), "Amazon.PurchasingService.getUserData", 1) {
         it.addInstructions(0, "return-void")
     }
 

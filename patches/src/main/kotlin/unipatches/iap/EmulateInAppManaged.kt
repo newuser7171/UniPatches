@@ -61,6 +61,7 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
 
         fun automaticCandidate(label: String, method: app.morphe.patcher.util.proxy.mutableTypes.MutableMethod): String? {
             if (!options.automaticMode) return null
+            options.backendBoundaryReason(method.definingClass)?.let { return it }
             val labelText = label.lowercase()
             val classText = method.definingClass.lowercase()
             val explicitLabel = listOf(

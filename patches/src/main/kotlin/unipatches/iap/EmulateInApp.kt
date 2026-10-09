@@ -36,7 +36,7 @@ val emulateInAppPatch = rawResourcePatch(
         title = "InApp Emulation > Patch Mode > Automatic Mode",
         default = true,
         key = "inAppAutomaticMode",
-        description = "When enabled, Automatic Mode detects and enables supported InApp Emulation strategies except RevenueCat, which always requires explicit opt-in. When disabled, Manual Mode is used and only the Patch Coverage strategies you select are applied.",
+        description = "When enabled, Automatic Mode detects and enables supported InApp Emulation strategies except RevenueCat and Amazon IAP, which require explicit opt-in. When disabled, Manual Mode is used and only the Patch Coverage strategies you select are applied.",
     )
 
     val fakeStartupPurchases by booleanOption(
@@ -92,7 +92,7 @@ val emulateInAppPatch = rawResourcePatch(
     val unityIap by booleanOption(title = "InApp Emulation > Patch Coverage > Unity IAP", default = false, key = "inAppCoverageUnityIap", description = "Enable Unity Purchasing callback strategy when Automatic Mode is disabled.")
     val unityIl2Cpp by booleanOption(title = "InApp Emulation > Patch Coverage > Unity IL2CPP", default = false, key = "inAppCoverageUnityIl2Cpp", description = "Enable Unity IL2CPP billing bridge strategy when Automatic Mode is disabled.")
     val legacyAidl by booleanOption(title = "InApp Emulation > Patch Coverage > Legacy AIDL Billing", default = false, key = "inAppCoverageLegacyAidl", description = "Enable legacy Android billing service strategy when Automatic Mode is disabled.")
-    val amazon by booleanOption(title = "InApp Emulation > Patch Coverage > Amazon IAP", default = false, key = "inAppCoverageAmazon", description = "Enable Amazon IAP strategy when Automatic Mode is disabled.")
+    val amazon by booleanOption(title = "InApp Emulation > Patch Coverage > Amazon IAP", default = false, key = "inAppCoverageAmazon", description = "Explicitly opt into Amazon IAP in either mode. Requires the Amazon IAP SDK; does not patch RevenueCat Amazon adapter methods.")
     val huawei by booleanOption(title = "InApp Emulation > Patch Coverage > Huawei IAP", default = false, key = "inAppCoverageHuawei", description = "Enable Huawei IAP strategy when Automatic Mode is disabled.")
     val samsung by booleanOption(title = "InApp Emulation > Patch Coverage > Samsung IAP", default = false, key = "inAppCoverageSamsung", description = "Enable Samsung Galaxy Store IAP strategy when Automatic Mode is disabled.")
     val xsolla by booleanOption(title = "InApp Emulation > Patch Coverage > Xsolla", default = false, key = "inAppCoverageXsolla", description = "Enable Xsolla purchase strategy when Automatic Mode is disabled.")

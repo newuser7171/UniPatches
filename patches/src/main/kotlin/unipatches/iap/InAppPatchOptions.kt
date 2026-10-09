@@ -26,12 +26,13 @@ internal data class InAppPatchOptions(
 
 /**
  * Keeps strategy selection independent from the individual bytecode adapters.
- * Automatic mode enables supported strategies except RevenueCat, which requires
- * explicit opt-in while its emitter and SDK compatibility remain experimental.
+ * Automatic mode enables supported strategies except RevenueCat and Amazon, which require
+ * explicit opt-in because their SDK and store paths are app-specific.
  */
 internal fun InAppPatchOptions.strategyEnabled(label: String, hasBillingV9Api: Boolean): Boolean {
     val lower = label.lowercase()
     if (lower.startsWith("rc.") || lower.startsWith("revenuecat")) return coverage.revenueCat
+    if (lower.startsWith("amazon.")) return coverage.amazon
     if (automaticMode) return true
     return when {
         lower.startsWith("isbillingsupported") || lower.contains("aidl") -> coverage.legacyAidl
@@ -53,4 +54,14 @@ internal fun InAppPatchOptions.strategyEnabled(label: String, hasBillingV9Api: B
             if (hasBillingV9Api) coverage.billingClientV9 else coverage.billingClientV3
         else -> false
     }
+}
+
+/** Prevent generic automatic fingerprints from crossing disabled backend namespaces. */
+internal fun InAppPatchOptions.backendBoundaryReason(definingClass: String): String? {
+    if (!automaticMode) return null
+    val type = definingClass.lowercase()
+    if (type.startsWith("lcom/revenuecat/") && !coverage.revenueCat) return "RevenueCat coverage disabled"
+    if (type.startsWith("lcom/amazon/") && !coverage.amazon) return "Amazon coverage disabled"
+    if (type.startsWith("lcom/revenuecat/purchases/amazon/") && !coverage.amazon) return "Amazon coverage disabled"
+    return null
 }

@@ -4,6 +4,10 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
 import helpers.bytecode.cloneMutable
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import java.util.logging.Logger
 
 internal fun BytecodePatchContext.applyRevenueCatPatches(
@@ -16,6 +20,57 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
     val parameterRegister = context.parameterRegister
     var patched = 0
     val patchedMethods = mutableListOf<String>()
+
+    // Rizz 2.2.3 can receive a null LiveData while stopping its paywall.
+    // Guard only that observed lifecycle method; keep its normal body and all
+    // RevenueCat error callbacks when the model is initialized.
+    patchAll(Fingerprint(
+        name = "onScreenStopped",
+        definingClass = "Lcom/rizzlabs/rizz/viewmodels/PaywallImmediateViewModel;",
+        returnType = "V",
+        custom = { m, _ -> m.parameterTypes.isEmpty() },
+    ), "RC.Rizz.paywallLifecycle", 3) { method ->
+        val instructions = method.implementation?.instructions?.toList() ?: return@patchAll
+        val state = instructions.asSequence().filter { it.opcode == Opcode.IGET_OBJECT }
+            .mapNotNull { (it as? ReferenceInstruction)?.reference as? FieldReference }
+            .firstOrNull { it.definingClass == method.definingClass && it.name == "state" } ?: return@patchAll
+        val getters = listOf("getBypassNotification", "getAddCloseToPaywallImmediate").map { name ->
+            instructions.asSequence().filter { it.opcode == Opcode.INVOKE_VIRTUAL }
+                .mapNotNull { (it as? ReferenceInstruction)?.reference as? MethodReference }
+                .firstOrNull { it.definingClass == state.type && it.name == name &&
+                    it.parameterTypes.isEmpty() && it.returnType in setOf(
+                        "Landroidx/lifecycle/LiveData;", "Landroidx/lifecycle/MutableLiveData;",
+                    ) }
+        }
+        if (getters.any { it == null }) return@patchAll
+        val owner = mutableClassDefByOrNull(method.definingClass) ?: return@patchAll
+        val target = owner.methods.firstOrNull {
+            it.name == method.name && it.parameterTypes == method.parameterTypes && it.returnType == method.returnType
+        } ?: return@patchAll
+        val guard = buildString {
+            appendLine("move-object/from16 v1, p0")
+            for ((index, getter) in getters.withIndex()) {
+                appendLine("iget-object v0, v1, ${state.definingClass}->${state.name}:${state.type}")
+                appendLine("if-eqz v0, :morphe_rizz_stop_null_$index")
+                appendLine("invoke-virtual {v0}, ${getter!!.definingClass}->${getter.name}()${getter.returnType}")
+                appendLine("move-result-object v0")
+                appendLine("if-nez v0, :morphe_rizz_stop_next_$index")
+                appendLine(":morphe_rizz_stop_null_$index")
+                appendLine("return-void")
+                appendLine(":morphe_rizz_stop_next_$index")
+            }
+        }
+        try {
+            val cloned = method.cloneMutable()
+            cloned.addInstructions(0, guard)
+            owner.methods.remove(target)
+            owner.methods.add(cloned)
+            patched++
+            patchedMethods.add("RC.Rizz.paywallLifecycle")
+        } catch (error: Exception) {
+            logger.warning("Emulate InApp: Rizz lifecycle guard skipped: ${error.message}")
+        }
+    }
 
         // REVENUECAT (server receipt validation cannot be faked;
         // these make the app run its bought-path locally instead)
@@ -246,13 +301,8 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
         }
         }
 
-        // 3) App-side RevenueCat error callbacks with PurchasesError -> suppress,
-        // so failed server validation cannot pop error UI over the unlock.
-        patchAll(Fingerprint(name = "onError", returnType = "V",
-            custom = { m, c -> !c.type.contains("revenuecat") && m.parameterTypes.any { it.contains("PurchasesError") } }),
-            "RC.onError") {
-            it.addInstructions(0, "return-void")
-        }
+        // Leave application PurchasesError callbacks intact. Swallowing them can
+        // skip UI/model cleanup and strand fields that lifecycle handlers read.
 
         // ──────────────────────────────────────────────
 
