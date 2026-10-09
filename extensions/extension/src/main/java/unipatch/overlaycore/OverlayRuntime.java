@@ -72,6 +72,7 @@ import unipatch.overlaycore.modules.OverlayAppSpecificModuleRegistry;
 import unipatch.overlaycore.modules.example.HillClimbRacingExampleProvider;
 import unipatch.overlaycore.modules.ads.AdsControlRuntimeProvider;
 import unipatch.overlaycore.modules.iap.InAppEmulationRuntimeProvider;
+import unipatch.overlaycore.modules.memory.MemoryEditorRuntimeProvider;
 import unipatch.overlaycore.modules.system.DoNotDisturbModule;
 import unipatch.overlaycore.modules.advanced.OverlayRuntimeLogsModule;
 import unipatch.overlaycore.modules.advanced.OverlayRuntimeLogger;
@@ -130,6 +131,7 @@ public final class OverlayRuntime {
         registerAppSpecificProvider(new HillClimbRacingExampleProvider());
         registerAppSpecificProvider(new AdsControlRuntimeProvider());
         registerAppSpecificProvider(new InAppEmulationRuntimeProvider());
+        registerAppSpecificProvider(new MemoryEditorRuntimeProvider());
     }
 
     private OverlayRuntime() { }
@@ -1511,7 +1513,7 @@ public final class OverlayRuntime {
 
         private boolean hasIntegratedModules() {
             return AdsRuntimePolicy.hasAnyModule() || AdsRuntimePolicy.hasAnyOverlayModule()
-                    || InAppRuntimePolicy.isConfigured();
+                    || InAppRuntimePolicy.isConfigured() || MemoryEditorPolicy.isEnabled();
         }
 
         private void addAppSpecificModules(LinearLayout parent) {
@@ -2041,6 +2043,8 @@ public final class OverlayRuntime {
                         section = "Ad control hook modules";
                     } else if (InAppEmulationRuntimeProvider.PROFILE_ID.equals(profileId) && InAppRuntimePolicy.isConfigured()) {
                         section = "InApp Emulation";
+                    } else if (MemoryEditorRuntimeProvider.PROFILE_ID.equals(profileId) && MemoryEditorPolicy.isEnabled()) {
+                        section = "Memory Editor";
                     } else {
                         continue;
                     }
