@@ -65,3 +65,14 @@ internal fun InAppPatchOptions.backendBoundaryReason(definingClass: String): Str
     if (type.startsWith("lcom/revenuecat/purchases/amazon/") && !coverage.amazon) return "Amazon coverage disabled"
     return null
 }
+
+/** RevenueCat owns its BillingClient lifecycle and expects a single real setup result. */
+internal fun preserveRevenueCatStoreLifecycle(label: String, hasRevenueCatSdk: Boolean): Boolean =
+    hasRevenueCatSdk && label in setOf(
+        "BillingClient.startConnection",
+        "BillingClient.isReady",
+        "BillingClient.getConnectionState",
+        "BillingClient.endConnection",
+        "BillingClient.getResponseCode",
+        "isFeatureSupported",
+    )

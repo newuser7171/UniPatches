@@ -15,6 +15,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RevenueCatRegressionTest {
+    @Test
+    fun revenueCatKeepsRealStoreLifecycleAndSingleSetupCallback() {
+        for (label in listOf("BillingClient.startConnection", "BillingClient.isReady",
+            "BillingClient.getConnectionState", "BillingClient.endConnection",
+            "BillingClient.getResponseCode", "isFeatureSupported")) {
+            assertTrue(preserveRevenueCatStoreLifecycle(label, true))
+            assertFalse(preserveRevenueCatStoreLifecycle(label, false))
+        }
+        assertFalse(preserveRevenueCatStoreLifecycle("BillingClient.v9.launchBillingFlow", true))
+        assertFalse(preserveRevenueCatStoreLifecycle("RC.onPurchasesUpdated", true))
+    }
+
     private fun options(automatic: Boolean, revenueCat: Boolean, amazon: Boolean = false) = InAppPatchOptions(
         automaticMode = automatic,
         fakeStartupPurchases = false,

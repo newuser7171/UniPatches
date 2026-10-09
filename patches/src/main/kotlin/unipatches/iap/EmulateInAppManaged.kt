@@ -56,6 +56,7 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
         val nonOverlayTimeout = options.timeouts.first.coerceIn(1, 86400)
         val overlayTimeout = options.timeouts.second.coerceIn(1, 86400)
         val hasBillingV9Api = mutableClassDefByOrNull("Lcom/android/billingclient/api/ProductDetails;") != null
+        val hasRevenueCatSdk = mutableClassDefByOrNull("Lcom/revenuecat/purchases/Purchases;") != null
 
         fun strategyEnabled(label: String): Boolean = options.strategyEnabled(label, hasBillingV9Api)
 
@@ -181,6 +182,10 @@ internal fun emulateInAppManagedPatch(optionsProvider: () -> InAppPatchOptions) 
             }
         }
         fun patchAll(fp: Fingerprint, label: String, needRegs: Int = 1, injector: (app.morphe.patcher.util.proxy.mutableTypes.MutableMethod) -> Unit) {
+            if (preserveRevenueCatStoreLifecycle(label, hasRevenueCatSdk)) {
+                logger.info("FreeIAP preserving RevenueCat store lifecycle: $label")
+                return
+            }
             if (!strategyEnabled(label)) {
                 logger.info("FreeIAP skipped disabled coverage strategy: $label")
                 return
