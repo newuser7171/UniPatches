@@ -2,6 +2,14 @@ package unipatches.iap
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
+import com.android.tools.smali.dexlib2.Opcodes
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
+import com.android.tools.smali.dexlib2.immutable.ImmutableClassDef
+import com.android.tools.smali.dexlib2.immutable.ImmutableExceptionHandler
+import com.android.tools.smali.dexlib2.immutable.ImmutableTryBlock
+import com.android.tools.smali.dexlib2.writer.io.MemoryDataStore
+import com.android.tools.smali.dexlib2.writer.pool.DexPool
+import java.io.ByteArrayInputStream
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -81,4 +89,34 @@ class RevenueCatAmazonCompatibilityTest {
         assertFalse(isolateMissingRevenueCatAmazonBranch(method))
         assertEquals(before, method.implementation!!.instructions.toList())
     }
+    @Test
+    fun survivesDexSerializationWithTheOriginalAmazonCatchHandler() {
+        val original = factory()
+        original.addInstructions(original.implementation!!.instructions.count(), "move-exception v0\nthrow v0")
+        val instructions = original.implementation!!.instructions.toList()
+        val constructorStart = instructions.take(2).sumOf { it.codeUnits }
+        val handlerStart = instructions.dropLast(2).sumOf { it.codeUnits }
+        val method = ImmutableMethod(
+            original.definingClass, original.name, original.parameters, original.returnType,
+            original.accessFlags, original.annotations, original.hiddenApiRestrictions,
+            ImmutableMethodImplementation(5, instructions,
+                listOf(ImmutableTryBlock(constructorStart, instructions[2].codeUnits,
+                    listOf(ImmutableExceptionHandler("Ljava/lang/NoClassDefFoundError;", handlerStart)))),
+                emptyList()),
+        ).toMutable()
+        assertTrue(isolateMissingRevenueCatAmazonBranch(method))
+        val pool = DexPool(Opcodes.getDefault())
+        pool.internClass(ImmutableClassDef(method.definingClass, 1, "Ljava/lang/Object;",
+            emptyList(), null, emptySet(), emptyList(), listOf(method)))
+        val output = MemoryDataStore()
+        pool.writeTo(output)
+        val dex = DexBackedDexFile.fromInputStream(Opcodes.getDefault(), ByteArrayInputStream(output.data))
+        val emitted = dex.classes.single().methods.single().implementation!!
+        assertTrue(emitted.instructions.any { it.opcode == Opcode.THROW })
+        for (block in emitted.tryBlocks) {
+            assertTrue(block.codeUnitCount > 0)
+            assertTrue(block.exceptionHandlers.all { it.handlerCodeAddress >= 0 })
+        }
+    }
+
 }

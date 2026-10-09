@@ -32,9 +32,12 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                 custom = { m, _ -> m.parameterTypes.firstOrNull() == "Lcom/revenuecat/purchases/Store;" },
             ), "RC.BillingFactory.missingAmazonSdk") { method ->
                 val owner = mutableClassDefByOrNull(method.definingClass) ?: return@patchAll
+                val target = owner.methods.firstOrNull {
+                    it.name == method.name && it.parameterTypes == method.parameterTypes && it.returnType == method.returnType
+                } ?: return@patchAll
                 val cloned = method.cloneMutable()
                 if (isolateMissingRevenueCatAmazonBranch(cloned)) {
-                    owner.methods.remove(method)
+                    owner.methods.remove(target)
                     owner.methods.add(cloned)
                     patched++
                     patchedMethods.add("RC.BillingFactory.missingAmazonSdk")
