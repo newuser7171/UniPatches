@@ -1,3 +1,10 @@
+## [1.31.3](https://github.com/newuser7171/UniPatches/compare/v1.31.2...v1.31.3) (2026-10-09)
+
+### 🐛 Bug Fixes
+
+* **iap:** isolate unavailable Amazon dependencies in RevenueCat factory ([6e556bd](https://github.com/newuser7171/UniPatches/commit/6e556bd19530d7861c8bd5a09f361d9f59321905))
+* **iap:** recognize branch mnemonics and bind fixture labels ([4b4eeee](https://github.com/newuser7171/UniPatches/commit/4b4eeee05c18d69a01ad6a022b55289cad7247fe))
+
 ## [1.31.2](https://github.com/newuser7171/UniPatches/compare/v1.31.1...v1.31.2) (2026-10-09)
 
 ### 🐛 Bug Fixes

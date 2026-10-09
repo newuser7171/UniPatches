@@ -125,7 +125,7 @@ and has its own detailed guide in [tools/icon-builder/README.md](tools/icon-buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.31.2](https://github.com/newuser7171/UniPatches/releases/tag/v1.31.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;16 patches total
+> **[v1.31.3](https://github.com/newuser7171/UniPatches/releases/tag/v1.31.3)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;16 patches total
 <details open>
 <summary>📦 Hill Climb Racing&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
