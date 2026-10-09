@@ -1,3 +1,9 @@
+## [1.31.2](https://github.com/newuser7171/UniPatches/compare/v1.31.1...v1.31.2) (2026-10-09)
+
+### 🐛 Bug Fixes
+
+* **iap:** require explicit RevenueCat opt-in and test register emission ([f3e73b1](https://github.com/newuser7171/UniPatches/commit/f3e73b1b9587752d1621c55c44928e6817c13571))
+
 ## [1.31.1](https://github.com/newuser7171/UniPatches/compare/v1.31.0...v1.31.1) (2026-10-01)
 
 ### 🐛 Bug Fixes
