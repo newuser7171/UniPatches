@@ -44,9 +44,10 @@ internal fun isolateMissingRevenueCatAmazonBranch(method: MutableMethod): Boolea
     // an unfamiliar SDK layout or references outside this branch.
     val body = instructions.subList(start + 1, end)
     if (body.any {
-        it.opcode.name.startsWith("IF_") || it.opcode.name.startsWith("GOTO") ||
-            it.opcode.name.contains("SWITCH") || it.opcode == Opcode.THROW ||
-            it.opcode.name.startsWith("RETURN")
+        val mnemonic = it.opcode.name.lowercase()
+        mnemonic.startsWith("if-") || mnemonic.startsWith("goto") ||
+            mnemonic.contains("switch") || it.opcode == Opcode.THROW ||
+            mnemonic.startsWith("return")
     }) return false
     if (instructions.indices.any { referencesAmazon(it) && it !in start..end }) return false
     if (body.none {

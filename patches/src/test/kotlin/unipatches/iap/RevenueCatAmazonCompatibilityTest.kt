@@ -1,6 +1,7 @@
 package unipatches.iap
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
 import com.android.tools.smali.dexlib2.Opcodes
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
@@ -30,7 +31,7 @@ class RevenueCatAmazonCompatibilityTest {
         "Lcom/revenuecat/purchases/common/BillingAbstract;", 0, null, null,
         ImmutableMethodImplementation(registers, emptyList(), emptyList(), emptyList()),
     ).toMutable().apply {
-        addInstructions(0, """
+        addInstructionsWithLabels(0, """
             if-eqz p1, :play
             new-instance v0, Lcom/revenuecat/purchases/amazon/AmazonBilling;
             invoke-direct {v0}, Lcom/revenuecat/purchases/amazon/AmazonBilling;-><init>()V
@@ -84,7 +85,7 @@ class RevenueCatAmazonCompatibilityTest {
     @Test
     fun leavesUnfamiliarBranchShapesUnchanged() {
         val method = factory()
-        method.addInstructions(2, "goto :end\n:end\nnop")
+        method.addInstructionsWithLabels(2, "goto :end\n:end\nnop")
         val before = method.implementation!!.instructions.toList()
         assertFalse(isolateMissingRevenueCatAmazonBranch(method))
         assertEquals(before, method.implementation!!.instructions.toList())
