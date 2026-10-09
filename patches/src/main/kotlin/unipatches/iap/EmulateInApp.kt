@@ -20,7 +20,7 @@ val emulateInAppPatch = rawResourcePatch(
 
         Credits : Credits to Nai64Patches from Nai64 for original IAP patch core functionality, and credits to MiguelNinja19's billing patches, as it was used to enhance original IAP patch with Cocos2D and GameMaker and Native ILL2CPP Hex Patch.
 
-        Enhancement : UniPatches enhances this patch by improving compatibility, stability, and adding Automatic Mode (enabled by default) with optional per-backend Patch Coverage controls. UniPatches also adds an optional overlay addon for use with Universal Overlay Patch.
+        Enhancement : UniPatches enhances this patch by improving compatibility, stability, and adding Automatic Mode (enabled by default) with optional per-backend Patch Coverage controls. RevenueCat requires explicit opt-in even in Automatic Mode. UniPatches also adds an optional overlay addon for use with Universal Overlay Patch.
 
         Compatibility: the overlay addon requires Universal Overlay in the same patch operation. If using
         Control Embedded Auth / Stores, keep its licensing and Google Play Services controls separate
@@ -36,7 +36,7 @@ val emulateInAppPatch = rawResourcePatch(
         title = "InApp Emulation > Patch Mode > Automatic Mode",
         default = true,
         key = "inAppAutomaticMode",
-        description = "When enabled, Automatic Mode detects and enables supported InApp Emulation strategies. When disabled, Manual Mode is used and only the Patch Coverage strategies you select are applied.",
+        description = "When enabled, Automatic Mode detects and enables supported InApp Emulation strategies except RevenueCat, which always requires explicit opt-in. When disabled, Manual Mode is used and only the Patch Coverage strategies you select are applied.",
     )
 
     val fakeStartupPurchases by booleanOption(
@@ -88,7 +88,7 @@ val emulateInAppPatch = rawResourcePatch(
     val billingClientV9 by booleanOption(title = "InApp Emulation > Patch Coverage > BillingClient v9", default = false, key = "inAppCoverageBillingV9", description = "Enable BillingClient v9/ProductDetails strategy when Automatic Mode is disabled.")
     val gameMaker by booleanOption(title = "InApp Emulation > Patch Coverage > GameMaker", default = false, key = "inAppCoverageGameMaker", description = "Enable GameMaker purchase bridge strategy when Automatic Mode is disabled.")
     val cocos2d by booleanOption(title = "InApp Emulation > Patch Coverage > Cocos2D", default = false, key = "inAppCoverageCocos2d", description = "Enable Cocos2D purchase callback strategy when Automatic Mode is disabled.")
-    val revenueCat by booleanOption(title = "InApp Emulation > Patch Coverage > RevenueCat", default = false, key = "inAppCoverageRevenueCat", description = "Enable RevenueCat strategy when Automatic Mode is disabled.")
+    val revenueCat by booleanOption(title = "InApp Emulation > Patch Coverage > RevenueCat", default = false, key = "inAppCoverageRevenueCat", description = "Explicitly opt into experimental RevenueCat strategies in either mode. Leave disabled unless validating a compatible SDK and store configuration; server-side verification is not supported.")
     val unityIap by booleanOption(title = "InApp Emulation > Patch Coverage > Unity IAP", default = false, key = "inAppCoverageUnityIap", description = "Enable Unity Purchasing callback strategy when Automatic Mode is disabled.")
     val unityIl2Cpp by booleanOption(title = "InApp Emulation > Patch Coverage > Unity IL2CPP", default = false, key = "inAppCoverageUnityIl2Cpp", description = "Enable Unity IL2CPP billing bridge strategy when Automatic Mode is disabled.")
     val legacyAidl by booleanOption(title = "InApp Emulation > Patch Coverage > Legacy AIDL Billing", default = false, key = "inAppCoverageLegacyAidl", description = "Enable legacy Android billing service strategy when Automatic Mode is disabled.")

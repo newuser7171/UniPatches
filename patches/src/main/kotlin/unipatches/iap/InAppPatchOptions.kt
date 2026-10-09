@@ -26,12 +26,13 @@ internal data class InAppPatchOptions(
 
 /**
  * Keeps strategy selection independent from the individual bytecode adapters.
- * Automatic mode deliberately short-circuits this check so newly supported
- * strategies remain covered without requiring a settings migration.
+ * Automatic mode enables supported strategies except RevenueCat, which requires
+ * explicit opt-in while its emitter and SDK compatibility remain experimental.
  */
 internal fun InAppPatchOptions.strategyEnabled(label: String, hasBillingV9Api: Boolean): Boolean {
-    if (automaticMode) return true
     val lower = label.lowercase()
+    if (lower.startsWith("rc.") || lower.startsWith("revenuecat")) return coverage.revenueCat
+    if (automaticMode) return true
     return when {
         lower.startsWith("isbillingsupported") || lower.contains("aidl") -> coverage.legacyAidl
         lower.startsWith("openiab") || lower.startsWith("unityplugin") -> coverage.openIab
@@ -41,7 +42,6 @@ internal fun InAppPatchOptions.strategyEnabled(label: String, hasBillingV9Api: B
         lower.startsWith("gamemaker") -> coverage.gameMaker
         lower.startsWith("unity.process") || lower.startsWith("unity.on") || lower.startsWith("unity.cross") -> coverage.unityIap
         lower.startsWith("unity") || lower.contains("il2cpp") -> coverage.unityIl2Cpp
-        lower.startsWith("rc.") || lower.startsWith("revenuecat") -> coverage.revenueCat
         lower.startsWith("amazon") -> coverage.amazon
         lower.startsWith("huawei") -> coverage.huawei
         lower.startsWith("samsung") -> coverage.samsung
