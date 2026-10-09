@@ -27,6 +27,9 @@ public final class MemoryEditorRuntimeProvider implements OverlayAppSpecificModu
         @Override public boolean hasEnableToggle() { return false; }
         @Override public boolean hasSettings() { return true; }
         @Override public boolean hasActionButton() { return false; }
+        @Override protected boolean readEnabled(Activity activity, int flags, int ui) { return MemoryEditorPolicy.isEnabled(); }
+        @Override protected void applyEnabled(Activity activity, int flags, int ui) { }
+        @Override protected void restoreOriginal(Activity activity, int flags, int ui) { }
         @Override public String settingsTitle() { return "Memory Editor command"; }
         @Override public String settingsTextValue() { return ""; }
         @Override public String settingsTextHint() {
