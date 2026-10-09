@@ -1,3 +1,9 @@
+## [1.31.5](https://github.com/newuser7171/UniPatches/compare/v1.31.4...v1.31.5) (2026-10-09)
+
+### 🐛 Bug Fixes
+
+* **iap:** preserve real BillingClient setup in RevenueCat apps ([29b9e7a](https://github.com/newuser7171/UniPatches/commit/29b9e7a40a95f698dcb7f2523674d9826a3b9f58))
+
 ## [1.31.4](https://github.com/newuser7171/UniPatches/compare/v1.31.3...v1.31.4) (2026-10-09)
 
 ### 🐛 Bug Fixes
