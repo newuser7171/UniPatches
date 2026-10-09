@@ -16,10 +16,7 @@ import java.util.Map;
  * always read and write its own memory, so this only ever touches the app it
  * is patched into.
  *
- * Deliberately NOT a GameGuardian replacement. That attaches to other processes
- * with ptrace and is blocked by SELinux and ptrace_scope on modern Android. This
- * is scoped to the patched app and is only useful where the flag is a live
- * in-memory value rather than a compile-time constant.
+ * The scanner operates inside the patched process and never attaches elsewhere.
  *
  * Scan modes mirror the familiar narrow-as-you-play loop: exact value, increased,
  * decreased, and unchanged since the previous scan. Values are grouped by their
@@ -58,7 +55,8 @@ public final class MemoryScanner {
      * small allocations, so callers narrow with {@link #setRegionFilter} before
      * committing to a full sweep.
      */
-    private static final long DEFAULT_MAX_REGION_BYTES = 512L * 1024 * 1024;
+    private static final long DEFAULT_MAX_REGION_BYTES = 64L * 1024 * 1024;
+    private static final long MAX_SCAN_BYTES = 128L * 1024 * 1024;
 
     private static final int MAX_RESULTS = 20_000;
 
@@ -69,6 +67,7 @@ public final class MemoryScanner {
     private final Map<Long, Integer> previous = new LinkedHashMap<>();
     private final Map<Long, Integer> current = new LinkedHashMap<>();
     private boolean hasPrevious = false;
+    private boolean lastScanReadable = false;
 
     /** Restricts scanning to mappings whose path contains {@code needle}. */
     public void setRegionFilter(String needle) {
@@ -83,9 +82,11 @@ public final class MemoryScanner {
         previous.clear();
         current.clear();
         hasPrevious = false;
+        lastScanReadable = false;
     }
 
     public int resultCount() { return current.size(); }
+    public boolean wasLastScanReadable() { return lastScanReadable; }
 
     public List<Long> resultAddresses(int limit) {
         List<Long> out = new ArrayList<>();
@@ -118,23 +119,30 @@ public final class MemoryScanner {
         }
 
         Map<Long, Integer> next = new LinkedHashMap<>();
-        for (Map.Entry<Long, Integer> entry : previous.entrySet()) {
-            long address = entry.getKey();
-            int oldValue = entry.getValue();
+        try (RandomAccessFile mem = new RandomAccessFile(new File("/proc/self/mem"), "r")) {
             byte[] buf = new byte[4];
-            if (read(address, buf) != 4) continue;
-            int newValue = littleEndianInt(buf);
-            boolean keep;
-            switch (mode) {
-                case EXACT:     keep = newValue == searchValue; break;
-                case INCREASED: keep = newValue > oldValue; break;
-                case DECREASED: keep = newValue < oldValue; break;
-                case UNCHANGED: keep = newValue == oldValue; break;
-                default:        keep = false;
+            for (Map.Entry<Long, Integer> entry : previous.entrySet()) {
+                long address = entry.getKey();
+                int oldValue = entry.getValue();
+                try {
+                    mem.seek(address);
+                    mem.readFully(buf);
+                } catch (Exception staleMapping) {
+                    continue;
+                }
+                int newValue = littleEndianInt(buf);
+                boolean keep;
+                switch (mode) {
+                    case EXACT:     keep = newValue == searchValue; break;
+                    case INCREASED: keep = newValue > oldValue; break;
+                    case DECREASED: keep = newValue < oldValue; break;
+                    case UNCHANGED: keep = newValue == oldValue; break;
+                    default:        keep = false;
+                }
+                if (keep && next.size() < MAX_RESULTS) next.put(address, newValue);
             }
-            if (keep && next.size() < MAX_RESULTS) {
-                next.put(address, newValue);
-            }
+        } catch (Exception unreadableMemory) {
+            // Keep an empty result set if /proc/self/mem is unavailable.
         }
 
         previous.clear();
@@ -147,32 +155,47 @@ public final class MemoryScanner {
     private void collectAll(int searchValue) {
         previous.clear();
         current.clear();
+        lastScanReadable = false;
+        long scanned = 0;
         for (Region region : parseMaps()) {
             if (region.size() > maxRegionBytes) continue;
-            // Word-align within the region so 4-byte reads stay on word boundaries.
+            if (scanned >= MAX_SCAN_BYTES || current.size() >= MAX_RESULTS) break;
             long start = (region.start + 3L) & ~3L;
-            long end = region.end & ~3L;
-            long address = start;
-            while (address + 4 <= end && current.size() < MAX_RESULTS) {
-                byte[] buf = new byte[4];
-                if (read(address, buf) != 4) {
-                    // Unreadable page inside a mapped region: skip past it rather
-                    // than stalling a byte at a time across a hole.
-                    address += 0x1000;
-                    continue;
+            long end = Math.min(region.end & ~3L, start + MAX_SCAN_BYTES - scanned);
+            // Keep one descriptor open per mapping rather than opening /proc/self/mem
+            // for every 4-byte value.
+            try (RandomAccessFile mem = new RandomAccessFile(new File("/proc/self/mem"), "r")) {
+                byte[] buf = new byte[64 * 1024];
+                for (long address = start; address + 4 <= end && current.size() < MAX_RESULTS; ) {
+                    int bytes = (int) Math.min(buf.length, end - address);
+                    try {
+                        mem.seek(address);
+                        mem.readFully(buf, 0, bytes);
+                        lastScanReadable = true;
+                        for (int offset = 0; offset + 4 <= bytes; offset += 4) {
+                            int value = littleEndianInt(buf, offset);
+                            if (value == searchValue) {
+                                long hit = address + offset;
+                                current.put(hit, value);
+                                previous.put(hit, value);
+                                if (current.size() >= MAX_RESULTS) break;
+                            }
+                        }
+                        address += bytes;
+                    } catch (Exception unreadablePage) {
+                        address = (address + 0x1000L) & ~0xfffL;
+                    }
                 }
-                int value = littleEndianInt(buf);
-                if (value == searchValue) {
-                    current.put(address, value);
-                    previous.put(address, value);
-                }
-                address += 4;
+            } catch (Exception unreadableRegion) {
+                // A mapping can disappear while the app is running.
             }
+            scanned += Math.max(0, end - start);
         }
     }
 
     /** Writes an int32 at {@code address}. Returns true when the write landed. */
     public boolean writeInt(long address, int value) {
+        if (!current.containsKey(address)) return false;
         byte[] buf = new byte[4];
         buf[0] = (byte) (value & 0xff);
         buf[1] = (byte) ((value >>> 8) & 0xff);
@@ -180,6 +203,7 @@ public final class MemoryScanner {
         buf[3] = (byte) ((value >>> 24) & 0xff);
         if (write(address, buf) != 4) return false;
         current.put(address, value);
+        previous.put(address, value);
         return true;
     }
 
@@ -221,9 +245,7 @@ public final class MemoryScanner {
                 String[] parts = line.trim().split("\\s+");
                 if (parts.length < 5) continue;
                 String perms = parts[1];
-                if (perms.length() < 3) continue;
-                // Private, writable, readable. Anonymous and file-backed both allowed.
-                if (perms.charAt(0) != 'r' || perms.charAt(1) != 'w' || perms.charAt(2) != 'p') continue;
+                if (!isReadableWritablePrivate(perms)) continue;
                 String[] range = parts[0].split("-");
                 if (range.length != 2) continue;
                 long start = Long.parseUnsignedLong(range[0], 16);
@@ -247,6 +269,11 @@ public final class MemoryScanner {
         return regionFilterBase == 0L || (start <= regionFilterBase && regionFilterBase < end);
     }
 
+    static boolean isReadableWritablePrivate(String perms) {
+        return perms != null && perms.length() >= 4 && perms.charAt(0) == 'r'
+                && perms.charAt(1) == 'w' && perms.charAt(3) == 'p';
+    }
+
     private int read(long address, byte[] buf) {
         try (RandomAccessFile mem = new RandomAccessFile(new File("/proc/self/mem"), "r")) {
             mem.seek(address);
@@ -268,9 +295,13 @@ public final class MemoryScanner {
     }
 
     private static int littleEndianInt(byte[] b) {
-        return (b[0] & 0xff)
-                | ((b[1] & 0xff) << 8)
-                | ((b[2] & 0xff) << 16)
-                | ((b[3] & 0xff) << 24);
+        return littleEndianInt(b, 0);
+    }
+
+    private static int littleEndianInt(byte[] b, int offset) {
+        return (b[offset] & 0xff)
+                | ((b[offset + 1] & 0xff) << 8)
+                | ((b[offset + 2] & 0xff) << 16)
+                | ((b[offset + 3] & 0xff) << 24);
     }
 }

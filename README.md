@@ -125,7 +125,7 @@ and has its own detailed guide in [tools/icon-builder/README.md](tools/icon-buil
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.31.5](https://github.com/newuser7171/UniPatches/releases/tag/v1.31.5)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;16 patches total
+> **[v1.31.2](https://github.com/newuser7171/UniPatches/releases/tag/v1.31.2)**&nbsp;&nbsp;•&nbsp;&nbsp;`main`&nbsp;&nbsp;•&nbsp;&nbsp;16 patches total
 <details open>
 <summary>📦 Hill Climb Racing&nbsp;&nbsp;•&nbsp;&nbsp;1 patch</summary>
 <br>
@@ -185,6 +185,17 @@ template are documented in [OVERLAY.md](OVERLAY.md), [OVERLAY_MODULES.md](OVERLA
 UniPatches is licensed under the [GNU General Public License v3.0](LICENSE).
 
 ## RevenueCat validation status
+
+The optional **Universal InApp + Memory Editor (Experimental)** patch combines
+the existing InApp Emulation purchase adapters with Universal Overlay and an
+in-process int32 memory editor. Open its Memory Editor module in the overlay
+and enter `exact 123`, then `increased`, `decreased`, or `unchanged` after a
+value changes; `show` lists the first eight results, and `write 0 999` edits
+result zero. `filter libil2cpp.so` limits a new scan to mappings with that
+name; `filter all` resets the filter. Scans run on a worker thread with bounded
+mapping and result limits. The tool can read and write only the patched app's
+own address space, and reports when `/proc/self/mem` is unavailable. It does
+not supply store products or bypass server-verified entitlements.
 
 InApp Emulation leaves RevenueCat disabled unless its coverage option is explicitly enabled,
 including in Automatic Mode. v1.31.1 restored the onPurchasesUpdated injector with a
