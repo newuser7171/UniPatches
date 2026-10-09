@@ -198,6 +198,15 @@ mapping and result limits. The tool can read and write only the patched app's
 own address space, and reports when `/proc/self/mem` is unavailable. It does
 not supply store products or bypass server-verified entitlements.
 
+For an APK that already loads Frida Gadget, `tools/frida/universal-inapp-memory.js`
+is a companion script. It hooks conventional zero-argument, boolean entitlement
+getters declared in the app's own package and exposes `scanint`, `refine`,
+`results`, `writeint`, and `reset` through Frida RPC or the `memory-command`
+message channel. For example, an attached host can call `script.exports.scanint(42)`
+and then `script.exports.writeint(0, 99)` after reviewing result zero. The script
+does not bundle or inject Gadget; load it through your existing Gadget setup.
+It does not synthesize BillingClient setup callbacks or Play Store products.
+
 InApp Emulation leaves RevenueCat disabled unless its coverage option is explicitly enabled,
 including in Automatic Mode. v1.31.1 restored the onPurchasesUpdated injector with a
 low-register-copy workaround; it did not repair the general emitter. Original frames above
