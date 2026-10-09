@@ -183,3 +183,17 @@ template are documented in [OVERLAY.md](OVERLAY.md), [OVERLAY_MODULES.md](OVERLA
 ## License
 
 UniPatches is licensed under the [GNU General Public License v3.0](LICENSE).
+
+## RevenueCat validation status
+
+InApp Emulation leaves RevenueCat disabled unless its coverage option is explicitly enabled,
+including in Automatic Mode. v1.31.1 restored the onPurchasesUpdated injector with a
+low-register-copy workaround; it did not repair the general emitter. Original frames above
+13 registers remain skipped. The reported Rizz test removed VerifyError and ConfigurationError
+but encountered a separate missing-Amazon-SDK failure; successful purchases are not established.
+
+Use a pristine, reproducible test APK with a pinned RevenueCat SDK, correctly configured
+Google Play Billing sandbox, and no missing store dependencies for the next validation.
+Compare coverage off/on, inspect emitted invoke/result adjacency, and run initialization,
+callback, cancellation, catalog, and restart checks. Server-side verification is unsupported.
+The APK smoke test checks injection and runtime presence, not end-to-end purchases.

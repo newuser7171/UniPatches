@@ -132,10 +132,8 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                         emit("invoke-interface {v$uCb, v$uTx, v$uCust}, $rcPurchaseCb->onCompleted($rcTx$rcCust)V")
                         emit("return-void")
                         emit(":morphe_rc_${pn}_original")
-                        try {
-                            owner.methods.remove(target)
-                        } catch (_: Exception) {}
                         cloned.addInstructions(0, sb.toString().trimIndent())
+                        owner.methods.remove(target)
                         owner.methods.add(cloned)
                         patched++
                         patchedMethods.add("RC.$pn-unsafe")
@@ -156,29 +154,8 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
             returnType = "V",
             custom = { m, _ -> m.parameterTypes.size == 2 && m.parameterTypes[1] == "Ljava/util/List;" }),
             "RC.onPurchasesUpdated") { method ->
-        // Disabled pending emitter review.
-        //
-        // An earlier note here claimed addInstructions drops the high-register
-        // invoke-static to InAppRuntimePolicy.productIdFrom when its argument register
-        // reaches v16 or higher. That was never verified and is probably wrong.
-        //
-        // What is actually established:
-        //  - RC.* labels are gated on InAppCoverage.revenueCat, a booleanOption that
-        //    defaults to false. strategyEnabled() returns before any fingerprint is
-        //    attempted when it is off, so this block did not run in the configuration
-        //    that produced the reported VerifyError.
-        //  - The orphaned move-result-object observed in dexdump came from an older
-        //    build with coverage enabled, already written into the test APK. Patching
-        //    that APK again read our own leftover back, which made every rebuild look
-        //    byte-identical.
-        //  - So disabling this block did not fix the VerifyError. Rizz launches clean
-        //    on the current bundle because RevenueCat coverage is off by default.
-        //
-        // Verified with coverage forced on: the injector runs, adds nothing, and the
-        // label reads RC.onPurchasesUpdated rather than BillingClient.startConnection.
-        //
-        // Kept disabled so enabling the coverage toggle cannot yield a broken block.
-        // Restoring it needs the real cause of the invalid invoke, still unknown.
+        // Restored in v1.31.1 with a low-register copy. Coverage requires explicit
+        // opt-in in both modes; this workaround does not repair the general emitter.
         logger.info("Emulate InApp: RC.onPurchasesUpdated fake enabled (unconditional low-register copy)")
         run {
             try {
@@ -219,9 +196,7 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                 // invoke is emitted and dropped. move-object/from16 takes a full 16-bit register,
                 // so the copy is always legal, and when the source register is already low the
                 // extra move is a harmless no-op. vH + 1 is below 16 because origCount <= 13.
-                emit("move-object/from16 v${vH + 1}, $purchasesReg")
-                emit("invoke-static {v${vH + 1}}, Lunipatch/overlaycore/InAppRuntimePolicy;->productIdFrom(Ljava/lang/Object;)Ljava/lang/String;")
-                emit("move-result-object v$vH")
+                emit(revenueCatProductIdInstructions(purchasesReg, vH + 1, vH))
                 emit("if-eqz v$vH, :morphe_rc_purchases_original")
                 emit("const-string v${vH + 1}, \"{}\"")
                 emit("new-instance v${vH + 2}, Lcom/android/billingclient/api/Purchase;")
@@ -232,10 +207,8 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
                 emit("invoke-virtual {v${vH + 1}, v${vH + 2}}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z")
                 emit("move-object/from16 $purchasesReg, v${vH + 1}")
                 emit(":morphe_rc_purchases_original")
-                try {
-                    owner.methods.remove(target)
-                } catch (_: Exception) {}
                 cloned.addInstructions(0, sb.toString().trimIndent())
+                owner.methods.remove(target)
                 owner.methods.add(cloned)
                 patched++
                 patchedMethods.add("RC.onPurchasesUpdated")
@@ -258,4 +231,13 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
 
 
     return patched to patchedMethods
+}
+
+internal fun revenueCatProductIdInstructions(source: String, temporary: Int, result: Int): String {
+    require(temporary in 0..15 && result in 0..15 && temporary != result)
+    return """
+        move-object/from16 v$temporary, $source
+        invoke-static {v$temporary}, Lunipatch/overlaycore/InAppRuntimePolicy;->productIdFrom(Ljava/lang/Object;)Ljava/lang/String;
+        move-result-object v$result
+    """.trimIndent()
 }
