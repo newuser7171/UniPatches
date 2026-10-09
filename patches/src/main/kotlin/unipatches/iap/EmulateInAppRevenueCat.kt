@@ -246,13 +246,8 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
         }
         }
 
-        // 3) App-side RevenueCat error callbacks with PurchasesError -> suppress,
-        // so failed server validation cannot pop error UI over the unlock.
-        patchAll(Fingerprint(name = "onError", returnType = "V",
-            custom = { m, c -> !c.type.contains("revenuecat") && m.parameterTypes.any { it.contains("PurchasesError") } }),
-            "RC.onError") {
-            it.addInstructions(0, "return-void")
-        }
+        // Leave application PurchasesError callbacks intact. Swallowing them can
+        // skip UI/model cleanup and strand fields that lifecycle handlers read.
 
         // ──────────────────────────────────────────────
 

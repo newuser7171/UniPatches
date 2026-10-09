@@ -206,3 +206,12 @@ converts an Amazon configuration into Play. Unknown factory layouts are left unc
 This addresses optional Amazon class resolution on Play builds, not missing Amazon billing
 support: real Amazon builds still require their complete store dependencies. Device
 validation of the reported emulator failure remains pending.
+
+For compatibility, automatic IAP patching does not touch RevenueCat or Amazon SDK
+classes unless their respective coverage options are enabled. Even with RevenueCat
+selected, app-side `PurchasesError` callbacks are left intact so the app can clean up
+its view model and lifecycle state after failed billing or catalog requests. Amazon
+store hooks match only the Amazon IAP SDK namespace, not RevenueCat's Amazon adapter.
+A previous Rizz log showed a null `LiveData` in its paywall `onScreenStopped` handler;
+these guards remove a possible contributing callback suppression, but that app-side
+crash needs a clean APK/device retest to confirm its cause.

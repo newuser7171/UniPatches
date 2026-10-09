@@ -15,12 +15,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RevenueCatRegressionTest {
-    private fun options(automatic: Boolean, revenueCat: Boolean) = InAppPatchOptions(
+    private fun options(automatic: Boolean, revenueCat: Boolean, amazon: Boolean = false) = InAppPatchOptions(
         automaticMode = automatic,
         fakeStartupPurchases = false,
         legacyInventoryMode = "preserve",
         timeouts = 10 to 30,
-        coverage = InAppCoverage(revenueCat = revenueCat),
+        coverage = InAppCoverage(revenueCat = revenueCat, amazon = amazon),
     )
 
     @Test
@@ -33,6 +33,22 @@ class RevenueCatRegressionTest {
         }
         assertTrue(options(true, false).strategyEnabled("BillingClient.startConnection", true))
         assertFalse(options(false, false).strategyEnabled("BillingClient.startConnection", true))
+    }
+
+    @Test
+    fun automaticModeDoesNotCrossDisabledSdkBoundaries() {
+        val default = options(automatic = true, revenueCat = false)
+        assertFalse(default.strategyEnabled("Amazon.purchase", true))
+        assertEquals("RevenueCat coverage disabled",
+            default.backendBoundaryReason("Lcom/revenuecat/purchases/google/BillingWrapper;"))
+        assertEquals("Amazon coverage disabled",
+            default.backendBoundaryReason("Lcom/amazon/device/iap/PurchasingService;"))
+        assertEquals("Amazon coverage disabled",
+            options(true, true).backendBoundaryReason("Lcom/revenuecat/purchases/amazon/AmazonBilling;"))
+        assertEquals(null, default.backendBoundaryReason("Lcom/android/billingclient/api/BillingClient;"))
+        val enabled = options(true, true, true)
+        assertTrue(enabled.strategyEnabled("Amazon.purchase", true))
+        assertEquals(null, enabled.backendBoundaryReason("Lcom/revenuecat/purchases/amazon/AmazonBilling;"))
     }
 
     @Test
