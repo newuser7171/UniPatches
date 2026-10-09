@@ -1,6 +1,6 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.31.5",
+  "version": "1.32.0",
   "patches": [
     {
       "name": "Ads Block Patch ( Experimental, Enhanced, Overlay Support, UniManager Support )",
@@ -2253,6 +2253,18 @@
           "values": null
         }
       ]
+    },
+    {
+      "name": "Universal InApp + Memory Editor (Experimental)",
+      "category": "InApp Emulation",
+      "description": "Patch common purchase paths and add an in-app int32 memory search/edit tool to Universal Overlay. The memory tool searches only the patched app process. Store catalogs and server-verified entitlements remain app-specific.",
+      "default": false,
+      "dependencies": [
+        "InApp Emulation Patch ( Experimental, Enhanced, Has Overlay Addon )",
+        "Universal Overlay Patch v2.6.1 ( Experimental, UniManager Support )"
+      ],
+      "compatiblePackages": null,
+      "options": []
     },
     {
       "name": "Universal Overlay Patch v2.6.1 ( Experimental, UniManager Support )",

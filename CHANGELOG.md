@@ -1,3 +1,13 @@
+## [1.32.0](https://github.com/newuser7171/UniPatches/compare/v1.31.5...v1.32.0) (2026-10-09)
+
+### 🐛 Bug Fixes
+
+* **overlay:** implement Memory Editor module state methods ([fe98120](https://github.com/newuser7171/UniPatches/commit/fe98120b659ecf7de2d93f2fae16069a0e31a2dc))
+
+### ✨ New Features
+
+* **iap:** add universal purchase and memory editor patch ([46701f0](https://github.com/newuser7171/UniPatches/commit/46701f0ab56cc241fd0f738d9454a01a74dd2e4e))
+
 ## [1.31.5](https://github.com/newuser7171/UniPatches/compare/v1.31.4...v1.31.5) (2026-10-09)
 
 ### 🐛 Bug Fixes
