@@ -24,6 +24,9 @@ jobs:
       - name: Verify release scripts
         run: python3 -m unittest discover -s .github/scripts -p "test_*.py"
 
+      - name: Verify Frida companion
+        run: node tools/frida/test-universal-inapp-memory.js
+
       - name: Build patches and run tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
