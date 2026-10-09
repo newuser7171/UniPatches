@@ -21,6 +21,30 @@ internal fun BytecodePatchContext.applyRevenueCatPatches(
         // these make the app run its bought-path locally instead)
         // ──────────────────────────────────────────────
 
+        val missingAmazonTypes = revenueCatAmazonRequiredTypes.filter {
+            classDefByOrNull(it) == null
+        }
+        if (missingAmazonTypes.isNotEmpty()) {
+            patchAll(Fingerprint(
+                name = "createBilling",
+                definingClass = "Lcom/revenuecat/purchases/BillingFactory;",
+                returnType = "Lcom/revenuecat/purchases/common/BillingAbstract;",
+                custom = { m, _ -> m.parameterTypes.firstOrNull() == "Lcom/revenuecat/purchases/Store;" },
+            ), "RC.BillingFactory.missingAmazonSdk") { method ->
+                val owner = mutableClassDefByOrNull(method.definingClass) ?: return@patchAll
+                val cloned = method.cloneMutable()
+                if (isolateMissingRevenueCatAmazonBranch(cloned)) {
+                    owner.methods.remove(method)
+                    owner.methods.add(cloned)
+                    patched++
+                    patchedMethods.add("RC.BillingFactory.missingAmazonSdk")
+                    logger.info("Emulate InApp: isolated unavailable Amazon factory branch; Play/test dispatch preserved")
+                } else {
+                    logger.warning("Emulate InApp: Amazon dependency compatibility skipped (unsupported factory layout): $missingAmazonTypes")
+                }
+            }
+        }
+
         val rcPurchases = "Lcom/revenuecat/purchases/Purchases;"
         val rcPurchaseCb = "Lcom/revenuecat/purchases/interfaces/PurchaseCallback;"
         val rcInfo = "Lcom/revenuecat/purchases/EntitlementInfo;"
